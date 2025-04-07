@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Persistent Book Library</title>
+    <style>
+        /* ... (rest of your CSS from the previous example) ... */
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            background-color: #f4f4f4;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #a7d9ed, #e0aed9, #d9edc2, #edc2a7);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #add-book-form {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            gap: 10px;
+        }
+
+        #add-book-form input[type="text"] {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        #add-book-form button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #add-book-form button:hover {
+            background-color: #0056b3;
+        }
+
+        #book-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .book-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .book-item:last-child {
+            border-bottom: none;
+        }
+
+        .book-cover {
+            width: 50px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .book-info {
+            flex-grow: 1;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+
+        .book-actions button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .book-actions button:hover {
+            background-color: #c82333;
+        }
+
+        .empty-library {
+            text-align: center;
+            color: #777;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Persistent Book Library</h1>
+
+        <form id="add-book-form">
+            <input type="text" id="title" placeholder="Book Title" required>
+            <input type="text" id="author" placeholder="Author" required>
+            <button type="button" onclick="addBook()">Add Book</button>
+        </form>
+
+        <ul id="book-list">
+            <li class="empty-library">Your library is empty. Add a book!</li>
+        </ul>
+    </div>
+
+    <script>
+        let library = [];
+        const bookList = document.getElementById('book-list');
+        const titleInput = document.getElementById('title');
+        const authorInput = document.getElementById('author');
+        const emptyLibraryMessage = document.querySelector('.empty-library');
+        const LOCAL_STORAGE_KEY = 'myBookLibraryData';
+
+        // Function to save the library to local storage
+        function saveLibrary() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(library));
+        }
+
+        // Function to load the library from local storage
+        function loadLibrary() {
+            const storedLibrary = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (storedLibrary) {
+                library = JSON.parse(storedLibrary);
+            }
+        }
+
+        function renderLibrary() {
+            bookList.innerHTML = '';
+            if (library.length === 0) {
+                bookList.appendChild(emptyLibraryMessage);
+            } else {
+                library.forEach((book, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('book-item');
+
+                    const bookCover = document.createElement('img');
+                    bookCover.classList.add('book-cover');
+                    bookCover.src = book.coverUrl || 'https://via.placeholder.com/50x70/cccccc/333333?Text=Book';
+                    bookCover.alt = book.title + " cover";
+
+                    const bookInfo = document.createElement('div');
+                    bookInfo.classList.add('book-info');
+                    bookInfo.innerHTML = `<strong>${book.title}</strong> by ${book.author}`;
+
+                    const bookActions = document.createElement('div');
+                    bookActions.classList.add('book-actions');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.onclick = () => deleteBook(index);
+                    bookActions.appendChild(deleteButton);
+
+                    listItem.appendChild(bookCover);
+                    listItem.appendChild(bookInfo);
+                    listItem.appendChild(bookActions);
+                    bookList.appendChild(listItem);
+                });
+            }
+        }
+
+        function addBook() {
+            const title = titleInput.value.trim();
+            const author = authorInput.value.trim();
+            const coverUrl = '';
+
+            if (title && author) {
+                library.push({ title: title, author: author, coverUrl: coverUrl });
+                titleInput.value = '';
+                authorInput.value = '';
+                renderLibrary();
+                saveLibrary(); // Save to local storage after adding
+            }
+        }
+
+        function deleteBook(index) {
+            library.splice(index, 1);
+            renderLibrary();
+            saveLibrary(); // Save to local storage after deleting
+        }
+
+        // Load the library from local storage when the page loads
+        loadLibrary();
+        // Initial rendering of the library
+        renderLibrary();
+    </script>
+</body>
+</html>
